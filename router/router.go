@@ -1,6 +1,7 @@
 package router
 
 import (
+	"fmt"
 	"github.com/obgnail/http-server-toy/context"
 	"net/http"
 	"strings"
@@ -36,26 +37,25 @@ func (r *routeNode) IsLeaf() bool {
 	return len(r.children) == 0
 }
 
-////////////////////////////////
-
 type Router struct {
-	node          map[string]*routeNode  // map[httpMethod]*routeNode
-	nodeFunctions map[string]HandlerFunc // map[method-path]*routeNode
+	root          map[string]*routeNode  // map[httpMethod]*routeNode
+	rootFunctions map[string]HandlerFunc // map[method-path]*routeNode
 }
 
 func NewRouter() *Router {
 	return &Router{
-		node:          make(map[string]*routeNode),
-		nodeFunctions: make(map[string]HandlerFunc),
+		root:          make(map[string]*routeNode),
+		rootFunctions: make(map[string]HandlerFunc),
 	}
 }
 
 func (r *Router) Add(method, path string, handler HandlerFunc) {
-	if _, ok := r.node[method]; !ok {
-		r.node[method] = newBlankRouterNode()
+	if _, ok := r.root[method]; !ok {
+		r.root[method] = newBlankRouterNode()
 	}
-	curNode := r.node[method]
+	curNode := r.root[method]
 	for _, word := range splitPath(path) {
+		wildcardConflict(word, curNode.children)
 		if _, ok := curNode.children[word]; !ok {
 			curNode.children[word] = newRouterNode(word, word[0] == ':')
 		}
@@ -63,44 +63,33 @@ func (r *Router) Add(method, path string, handler HandlerFunc) {
 	}
 	curNode.path = path
 	key := method + HandlerSeparator + path
-	r.nodeFunctions[key] = handler
+	r.rootFunctions[key] = handler
 }
 
-func (r *Router) Get(method, path string) (route *routeNode, params map[string]string) {
-	curNode, ok := r.node[method]
+func (r *Router) Get(method, path string) (*routeNode, map[string]string) {
+	node, ok := r.root[method]
 	if !ok {
-		return
+		return nil, nil
 	}
 
-	testMatchNode := []*routeNode{curNode}
-	paths := splitPath(path)
-	for _, word := range paths {
-		var tmpNode []*routeNode
-		for _, node := range testMatchNode {
-			if node.IsFuzzy() || word == node.word {
-				tmpNode = append(tmpNode, mapToSlice(node.children)...)
+	params := make(map[string]string, 0)
+	parts := splitPath(path)
+
+	for _, p := range parts {
+		var temp string
+		for _, child := range node.children {
+			if child.word == p || child.IsFuzzy() {
+				if child.word[0] == ':' {
+					k := child.word[1:]
+					v := p
+					params[k] = v
+				}
+				temp = child.word
 			}
-			testMatchNode = tmpNode
 		}
+		node = node.children[temp]
 	}
-
-	for i := len(testMatchNode); i >= 0; i-- {
-		if testMatchNode[i].IsLeaf() {
-			route = testMatchNode[i]
-		}
-	}
-
-	if route != nil {
-		curNode := route
-		params = make(map[string]string)
-		for _, word := range paths {
-			if curNode.IsFuzzy() {
-				params[curNode.word[1:]] = word
-			}
-			curNode = curNode.children[word]
-		}
-	}
-	return
+	return node, params
 }
 
 func (r *Router) Handle(ctx *context.Context) {
@@ -112,7 +101,7 @@ func (r *Router) Handle(ctx *context.Context) {
 	if node != nil {
 		ctx.SetParams(params)
 		k := method + HandlerSeparator + path
-		f, ok := r.nodeFunctions[k]
+		f, ok := r.rootFunctions[k]
 		if ok {
 			f(ctx)
 		} else {
@@ -135,9 +124,12 @@ func splitPath(path string) []string {
 	return ret
 }
 
-func mapToSlice(m map[string]*routeNode) (l []*routeNode) {
-	for _, v := range m {
-		l = append(l, v)
+func wildcardConflict(path string, nodes map[string]*routeNode) {
+	if len(nodes) != 0 {
+		for k := range nodes {
+			if strings.HasPrefix(k, ":") {
+				panic(fmt.Errorf("word %s conflicts with existing wildcard %s", path, k))
+			}
+		}
 	}
-	return
 }
