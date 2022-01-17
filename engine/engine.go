@@ -33,7 +33,7 @@ func (e *Engine) process(clientConn *connection.Conn) {
 	for {
 		req, err := clientConn.GetRequest()
 		if err != nil {
-			log.Warnf("get req err:", errors.Trace(err))
+			log.Debugf("get req err:", errors.Trace(err))
 			break
 		}
 		ctx := context.NewContext(req)

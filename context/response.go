@@ -28,12 +28,7 @@ func (resp *Response) SetHeader(key, value string) {
 	if resp.Header == nil {
 		resp.Header = make(map[string][]string)
 	}
-	_, ok := resp.Header[key]
-	if !ok {
-		resp.Header[key] = []string{value}
-	} else {
-		resp.Header[key] = append(resp.Header[key], value)
-	}
+	resp.Header[key] = append(resp.Header[key], value)
 }
 
 func (resp *Response) SetStatusCode(code int) {

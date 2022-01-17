@@ -48,7 +48,7 @@ func (req *Request) KeepAlive() bool {
 }
 
 func (req *Request) ParsePath() {
-	// /luo?message=hello&author=luo
+	// /liangbo?message=hello&author=liangbo
 	req.Query = make(map[string][]string)
 	idx := strings.Index(req.URL, "?")
 	if idx == -1 {
