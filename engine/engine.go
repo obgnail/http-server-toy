@@ -7,6 +7,7 @@ import (
 	"github.com/obgnail/http-server-toy/router"
 	log "github.com/sirupsen/logrus"
 	"net/http"
+	"time"
 )
 
 type Engine struct {
@@ -26,19 +27,22 @@ func (e *Engine) POST(path string, handler router.HandlerFunc) {
 }
 
 func (e *Engine) process(clientConn *connection.Conn) {
+	t := time.AfterFunc(time.Minute, func() { clientConn.Close() })
+	defer t.Stop()
+
 	for {
 		req, err := clientConn.GetRequest()
 		if err != nil {
-			log.Errorf("get req err:", errors.Trace(err))
-			return
+			log.Warnf("get req err:", errors.Trace(err))
+			break
 		}
 		ctx := context.NewContext(req)
 		e.Handle(ctx)
 		resp := ctx.GetResponse()
 		err = clientConn.SendResponse(resp)
 		if err != nil {
-			log.Errorf("write resp err:", errors.Trace(err))
-			return
+			log.Warnf("write resp err:", errors.Trace(err))
+			break
 		}
 
 		if !req.KeepAlive() {

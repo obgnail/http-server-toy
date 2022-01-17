@@ -1,6 +1,9 @@
 package context
 
-import "strings"
+import (
+	"net/http"
+	"strings"
+)
 
 const (
 	ContentType   = "content-type"
@@ -64,15 +67,15 @@ func (req *Request) ParsePath() {
 }
 
 var Methods = map[string]struct{}{
-	"GET":     {},
-	"POST":    {},
-	"HEAD":    {},
-	"CONNECT": {},
-	"PUT":     {},
-	"DELETE":  {},
-	"OPTIONS": {},
-	"TRACE":   {},
-	"PATCH":   {},
+	http.MethodGet:     {},
+	http.MethodPost:    {},
+	http.MethodHead:    {},
+	http.MethodConnect: {},
+	http.MethodPut:     {},
+	http.MethodDelete:  {},
+	http.MethodOptions: {},
+	http.MethodTrace:   {},
+	http.MethodPatch:   {},
 }
 
 var BodyType = map[string]struct{}{
