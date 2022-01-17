@@ -25,12 +25,6 @@ func (e *Engine) POST(path string, handler router.HandlerFunc) {
 	e.Add(http.MethodPost, path, handler)
 }
 
-//func (e *Engine) Process(clientConn *connection.Conn) {
-//	time.AfterFunc(time.Minute, func() {
-//		e.process(clientConn)
-//	})
-//}
-
 func (e *Engine) process(clientConn *connection.Conn) {
 	for {
 		req, err := clientConn.GetRequest()

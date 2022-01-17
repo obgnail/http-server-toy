@@ -100,7 +100,7 @@ func (r *Router) Handle(ctx *context.Context) {
 	node, params := r.Get(method, path)
 	if node != nil {
 		ctx.SetParams(params)
-		k := method + HandlerSeparator + path
+		k := method + HandlerSeparator + node.path
 		f, ok := r.rootFunctions[k]
 		if ok {
 			f(ctx)
@@ -111,6 +111,7 @@ func (r *Router) Handle(ctx *context.Context) {
 		ctx.GetResponse().SetStatusCode(http.StatusNotFound)
 	}
 	ctx.GetResponse().SetContentLength()
+	ctx.GetResponse().SetProto(req.Proto)
 }
 
 func splitPath(path string) []string {

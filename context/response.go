@@ -25,6 +25,9 @@ func NewResponse() *Response {
 }
 
 func (resp *Response) SetHeader(key, value string) {
+	if resp.Header == nil {
+		resp.Header = make(map[string][]string)
+	}
 	_, ok := resp.Header[key]
 	if !ok {
 		resp.Header[key] = []string{value}
@@ -39,4 +42,8 @@ func (resp *Response) SetStatusCode(code int) {
 
 func (resp *Response) SetBody(body []byte) {
 	resp.Body = body
+}
+
+func (resp *Response) SetProto(proto string) {
+	resp.Proto = proto
 }
